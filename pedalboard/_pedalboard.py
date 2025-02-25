@@ -749,6 +749,14 @@ except ImportError:
     # (i.e.: any platform that's not macOS.)
     pass
 
+try:
+    from pedalboard_native import LADSPAPlugin # type: ignore
+
+    _AVAILABLE_PLUGIN_CLASSES.append(LADSPAPlugin)
+except ImportError:
+    # We may be on a system that doesn't have native VST3Plugin support.
+    pass
+
 
 def load_plugin(
     path_to_plugin_file: str,

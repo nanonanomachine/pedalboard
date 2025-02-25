@@ -180,6 +180,18 @@ inline std::vector<std::string> findInstalledVSTPluginPaths() {
   return pluginPaths;
 }
 
+inline std::vector<std::string> findInstalledLADSPAPluginPaths() {
+  juce::MessageManager::getInstance();
+  juce::LADSPAPluginFormat format;
+  std::vector<std::string> pluginPaths;
+  for (juce::String pluginIdentifier : format.searchPathsForPlugins(
+           format.getDefaultLocationsToSearch(), true, false)) {
+    pluginPaths.push_back(
+        format.getNameOfPluginFromIdentifier(pluginIdentifier).toStdString());
+  }
+  return pluginPaths;
+}
+
 /**
  * Given a py::object representing a Python list object filled with Tuple[bytes,
  * float], each representing a MIDI message at a specific timestamp, return a
@@ -784,19 +796,24 @@ public:
       NUM_ACTIVE_EXTERNAL_PLUGINS++;
     }
 
-    pluginInstance->setStateInformation(savedState.getData(),
+    if (savedState.getSize() > 0) {
+      pluginInstance->setStateInformation(savedState.getData(),
                                         savedState.getSize());
 
-    // Set all of the parameters twice: we may have meta-parameters that
-    // change the validity of other `setValue` calls. (i.e.: param1 can't be
-    // set until param2 is set.)
-    for (int i = 0; i < 2; i++) {
-      for (auto *parameter : pluginInstance->getParameters()) {
-        if (currentParameters.count(parameter->getParameterIndex()) > 0) {
-          parameter->setValue(
-              currentParameters[parameter->getParameterIndex()]);
+      // Set all of the parameters twice: we may have meta-parameters that
+      // change the validity of other `setValue` calls. (i.e.: param1 can't be
+      // set until param2 is set.)
+      for (int i = 0; i < 2; i++) {
+        for (auto *parameter : pluginInstance->getParameters()) {
+          if (currentParameters.count(parameter->getParameterIndex()) > 0) {
+            parameter->setValue(
+                currentParameters[parameter->getParameterIndex()]);
+          }
         }
       }
+    } else {
+      // TODO: add log if needed
+      std::cout << "No previous state to restore" << std::endl;
     }
 
     if (lastSpec.numChannels != 0) {
@@ -2070,6 +2087,214 @@ see :class:`pedalboard.VST3Plugin`.)
       .def_readwrite(
           "_reload_type",
           &ExternalPlugin<juce::AudioUnitPluginFormat>::reloadType,
+          "The behavior that this plugin exhibits when .reset() is called. "
+          "This is an internal attribute which gets set on plugin "
+          "instantiation and should only be accessed for debugging and "
+          "testing.");
+#endif
+
+#if JUCE_LINUX
+  py::class_<ExternalPlugin<juce::LADSPAPluginFormat>,
+             AbstractExternalPlugin,
+             std::shared_ptr<ExternalPlugin<juce::LADSPAPluginFormat>>>(
+      m, "LADSPAPlugin",
+      R"(A wrapper around third-party, audio effect or instrument plugins in
+`LADSPA <https://en.wikipedia.org/wiki/LADSPA>`_ format.
+
+LADSPA plugins are supported on Linux. However, LADSPA plugin
+files are not cross-compatible with different operating systems; a platform-specific
+build of each plugin is required to load that plugin on a given platform. (For
+example: a Linux LADSPA plugin bundle will not load on Windows or macOS.)
+
+.. warning::
+    Some LADSPA plugins may throw errors, hang, generate incorrect output, or
+    outright crash if called from background threads. If you find that a LADSPA
+    plugin is not working as expected, try calling it from the main thread
+    instead and `open a GitHub Issue to track the incompatibility
+    <https://github.com/spotify/pedalboard/issues/new>`_.
+
+*Support for instrument plugins introduced in v0.7.4.*
+
+*Support for running LADSPA plugins on background threads introduced in v0.8.8.*
+)")
+      .def(
+          py::init([](std::string &pathToPluginFile, py::object parameterValues,
+                      std::optional<std::string> pluginName,
+                      float initializationTimeout) {
+            std::shared_ptr<ExternalPlugin<juce::LADSPAPluginFormat>>
+                plugin = std::make_shared<
+                    ExternalPlugin<juce::LADSPAPluginFormat>>(
+                    pathToPluginFile, pluginName, initializationTimeout);
+            py::cast(plugin).attr("__set_initial_parameter_values__")(
+                parameterValues);
+            return plugin;
+          }),
+          py::arg("path_to_plugin_file"),
+          py::arg("parameter_values") = py::none(),
+          py::arg("plugin_name") = py::none(),
+          py::arg("initialization_timeout") =
+              DEFAULT_INITIALIZATION_TIMEOUT_SECONDS)
+      .def("__repr__",
+           [](ExternalPlugin<juce::LADSPAPluginFormat> &plugin) {
+             std::ostringstream ss;
+             ss << "<pedalboard.LADSPAPlugin";
+             ss << " \"" << plugin.getName() << "\"";
+             ss << " at " << &plugin;
+             ss << ">";
+             return ss.str();
+           })
+      .def_static(
+          "get_plugin_names_for_file",
+          [](std::string filename) {
+            return getPluginNamesForFile<juce::LADSPAPluginFormat>(filename);
+          },
+          "Return a list of plugin names contained within a given LADSPA "
+          "plugin (i.e.: a \".ladspa\"). If the provided file cannot be "
+          "scanned, "
+          "an ImportError will be raised.")
+      .def_property_readonly_static(
+          "installed_plugins",
+          [](py::object /* cls */) { return findInstalledLADSPAPluginPaths(); },
+          "Return a list of paths to LADSPA plugins installed in the default "
+          "location on this system. This list may not be exhaustive, and "
+          "plugins in this list are not guaranteed to be compatible with "
+          "Pedalboard.")
+      .def_property_readonly(
+          "name",
+          [](ExternalPlugin<juce::LADSPAPluginFormat> &plugin) {
+            return plugin.getName().toStdString();
+          },
+          "The name of this plugin.")
+      .def_property(
+          "raw_state",
+          [](const ExternalPlugin<juce::LADSPAPluginFormat> &plugin) {
+            juce::MemoryBlock state;
+            plugin.getState(state);
+            return py::bytes((const char *)state.getData(), state.getSize());
+          },
+          [](ExternalPlugin<juce::LADSPAPluginFormat> &plugin,
+             const py::bytes &state) {
+            py::buffer_info info(py::buffer(state).request());
+            plugin.setState(info.ptr, static_cast<size_t>(info.size));
+          },
+          "A :py:class:`bytes` object representing the plugin's internal "
+          "state."
+          "For the LADSPA format, this is usually an XML-encoded string "
+          "prefixed with an 8-byte header and suffixed with a single null "
+          "byte."
+          ".. warning:: This property can be set to change the "
+          "plugin's internal state, but providing invalid data may cause the "
+          "plugin to crash, taking the entire Python process down with it.")
+      .def_property_readonly(
+          "descriptive_name",
+          [](ExternalPlugin<juce::LADSPAPluginFormat> &plugin) {
+            return plugin.foundPluginDescription.descriptiveName.toStdString();
+          },
+          "A more descriptive name for this plugin. This may be the same as "
+          "the 'name' field, but some plugins may provide an alternative "
+          "name.  *Introduced in v0.9.4.*")
+      .def_property_readonly(
+          "category",
+          [](ExternalPlugin<juce::LADSPAPluginFormat> &plugin) {
+            return plugin.foundPluginDescription.category.toStdString();
+          },
+          "A category that this plugin falls into, such as \"Dynamics\", "
+          "\"Reverbs\", etc.  *Introduced in v0.9.4.*")
+      .def_property_readonly(
+          "manufacturer_name",
+          [](ExternalPlugin<juce::LADSPAPluginFormat> &plugin) {
+            return plugin.foundPluginDescription.manufacturerName.toStdString();
+          },
+          "The name of the manufacturer of this plugin, as reported by the "
+          "plugin itself.  *Introduced in v0.9.4.*")
+      .def_property_readonly(
+          "version",
+          [](ExternalPlugin<juce::LADSPAPluginFormat> &plugin) {
+            return plugin.foundPluginDescription.version.toStdString();
+          },
+          "The version string for this plugin, as reported by the plugin "
+          "itself.  *Introduced in v0.9.4.*")
+      .def_property_readonly(
+          "is_instrument",
+          [](ExternalPlugin<juce::LADSPAPluginFormat> &plugin) {
+            return plugin.foundPluginDescription.isInstrument;
+          },
+          "True iff this plugin identifies itself as an instrument (generator, "
+          "synthesizer, etc) plugin.  *Introduced in v0.9.4.*")
+      .def_property_readonly(
+          "has_shared_container",
+          [](ExternalPlugin<juce::LADSPAPluginFormat> &plugin) {
+            return plugin.foundPluginDescription.hasSharedContainer;
+          },
+          "True iff this plugin is part of a multi-plugin "
+          "container.  *Introduced in v0.9.4.*")
+      .def_property_readonly(
+          "identifier",
+          [](ExternalPlugin<juce::LADSPAPluginFormat> &plugin) {
+            return plugin.foundPluginDescription.createIdentifierString()
+                .toStdString();
+          },
+          "A string that can be saved and used to uniquely identify this "
+          "plugin (and version) again.  *Introduced in v0.9.4.*")
+      .def_property_readonly(
+          "reported_latency_samples",
+          [](ExternalPlugin<juce::LADSPAPluginFormat> &plugin) {
+            return plugin.getLatencyHint();
+          },
+          "The number of samples of latency (delay) that this plugin reports "
+          "to introduce into the audio signal due to internal buffering "
+          "and processing. Pedalboard automatically compensates for this "
+          "latency during processing, so this property is present for "
+          "informational purposes. Note that not all plugins correctly report "
+          "the latency that they introduce, so this value may be inaccurate "
+          "(especially if the plugin reports 0).  *Introduced in v0.9.12.*")
+      .def_property_readonly(
+          "_parameters",
+          &ExternalPlugin<juce::LADSPAPluginFormat>::getParameters,
+          py::return_value_policy::reference_internal)
+      .def("_get_parameter",
+           &ExternalPlugin<juce::LADSPAPluginFormat>::getParameter,
+           py::return_value_policy::reference_internal)
+      .def("show_editor",
+           &ExternalPlugin<juce::LADSPAPluginFormat>::showEditor,
+           SHOW_EDITOR_DOCSTRING, py::arg("close_event") = py::none())
+      .def(
+          "process",
+          [](std::shared_ptr<Plugin> self, const py::array inputArray,
+             double sampleRate, unsigned int bufferSize, bool reset) {
+            return process(inputArray, sampleRate, {self}, bufferSize, reset);
+          },
+          EXTERNAL_PLUGIN_PROCESS_DOCSTRING, py::arg("input_array"),
+          py::arg("sample_rate"), py::arg("buffer_size") = DEFAULT_BUFFER_SIZE,
+          py::arg("reset") = true)
+      .def(
+          "__call__",
+          [](std::shared_ptr<Plugin> self, const py::array inputArray,
+             double sampleRate, unsigned int bufferSize, bool reset) {
+            return process(inputArray, sampleRate, {self}, bufferSize, reset);
+          },
+          "Run an audio or MIDI buffer through this plugin, returning "
+          "audio. Alias for :py:meth:`process`.",
+          py::arg("input_array"), py::arg("sample_rate"),
+          py::arg("buffer_size") = DEFAULT_BUFFER_SIZE, py::arg("reset") = true)
+      .def("process",
+           &ExternalPlugin<juce::LADSPAPluginFormat>::renderMIDIMessages,
+           EXTERNAL_PLUGIN_PROCESS_DOCSTRING, py::arg("midi_messages"),
+           py::arg("duration"), py::arg("sample_rate"),
+           py::arg("num_channels") = 2,
+           py::arg("buffer_size") = DEFAULT_BUFFER_SIZE,
+           py::arg("reset") = true)
+      .def("__call__",
+           &ExternalPlugin<juce::LADSPAPluginFormat>::renderMIDIMessages,
+           "Run an audio or MIDI buffer through this plugin, returning "
+           "audio. Alias for :py:meth:`process`.",
+           py::arg("midi_messages"), py::arg("duration"),
+           py::arg("sample_rate"), py::arg("num_channels") = 2,
+           py::arg("buffer_size") = DEFAULT_BUFFER_SIZE,
+           py::arg("reset") = true)
+      .def_readwrite(
+          "_reload_type",
+          &ExternalPlugin<juce::LADSPAPluginFormat>::reloadType,
           "The behavior that this plugin exhibits when .reset() is called. "
           "This is an internal attribute which gets set on plugin "
           "instantiation and should only be accessed for debugging and "
