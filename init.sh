@@ -5,7 +5,9 @@ set -e
 
 cd /app
 
-pip3 install numpy pybind11 setuptools wheel
+pip3 install numpy pybind11 setuptools wheel tox
+pip3 install -r test-requirements.txt
+pip3 install -r docs-requirements.txt
 
 # pip3 install .
 

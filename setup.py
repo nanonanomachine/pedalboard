@@ -29,6 +29,7 @@ DEBUG = bool(int(os.environ.get("DEBUG", 0)))
 # C or C++ flags:
 BASE_CPP_FLAGS = [
     "-Wall",
+    "-mavx"
 ]
 ALL_INCLUDES = []
 ALL_LINK_ARGS = []

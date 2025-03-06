@@ -20,13 +20,14 @@ RUN apt-get update \
         libxcursor-dev libfreetype6 libfreetype6-dev \
         libasound2-dev \
         ccache \
+        git \
         gdb \
     && rm -rf /var/lib/apt/lists/*
 
 # gdb-peta
-git clone https://github.com/longld/peda.git ~/peda
-echo "source ~/peda/peda.py" >> ~/.gdbinit
-echo "DONE! debug your program with gdb and enjoy"
+RUN git clone https://github.com/longld/peda.git ~/peda
+RUN echo "source ~/peda/peda.py" >> ~/.gdbinit
+RUN echo "DONE! debug your program with gdb and enjoy"
 
 # Set work directory
 RUN mkdir /app
