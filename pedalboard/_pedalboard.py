@@ -750,7 +750,7 @@ except ImportError:
     pass
 
 try:
-    from pedalboard_native import LADSPAPlugin # type: ignore
+    from pedalboard_native import LADSPAPlugin  # type: ignore
 
     _AVAILABLE_PLUGIN_CLASSES.append(LADSPAPlugin)
 except ImportError:
