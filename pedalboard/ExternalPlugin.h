@@ -798,7 +798,7 @@ public:
 
     if (savedState.getSize() > 0) {
       pluginInstance->setStateInformation(savedState.getData(),
-                                        savedState.getSize());
+                                          savedState.getSize());
 
       // Set all of the parameters twice: we may have meta-parameters that
       // change the validity of other `setValue` calls. (i.e.: param1 can't be
@@ -2094,8 +2094,7 @@ see :class:`pedalboard.VST3Plugin`.)
 #endif
 
 #if JUCE_LINUX
-  py::class_<ExternalPlugin<juce::LADSPAPluginFormat>,
-             AbstractExternalPlugin,
+  py::class_<ExternalPlugin<juce::LADSPAPluginFormat>, AbstractExternalPlugin,
              std::shared_ptr<ExternalPlugin<juce::LADSPAPluginFormat>>>(
       m, "LADSPAPlugin",
       R"(A wrapper around third-party, audio effect or instrument plugins in
@@ -2121,9 +2120,8 @@ example: a Linux LADSPA plugin bundle will not load on Windows or macOS.)
           py::init([](std::string &pathToPluginFile, py::object parameterValues,
                       std::optional<std::string> pluginName,
                       float initializationTimeout) {
-            std::shared_ptr<ExternalPlugin<juce::LADSPAPluginFormat>>
-                plugin = std::make_shared<
-                    ExternalPlugin<juce::LADSPAPluginFormat>>(
+            std::shared_ptr<ExternalPlugin<juce::LADSPAPluginFormat>> plugin =
+                std::make_shared<ExternalPlugin<juce::LADSPAPluginFormat>>(
                     pathToPluginFile, pluginName, initializationTimeout);
             py::cast(plugin).attr("__set_initial_parameter_values__")(
                 parameterValues);
@@ -2255,8 +2253,7 @@ example: a Linux LADSPA plugin bundle will not load on Windows or macOS.)
       .def("_get_parameter",
            &ExternalPlugin<juce::LADSPAPluginFormat>::getParameter,
            py::return_value_policy::reference_internal)
-      .def("show_editor",
-           &ExternalPlugin<juce::LADSPAPluginFormat>::showEditor,
+      .def("show_editor", &ExternalPlugin<juce::LADSPAPluginFormat>::showEditor,
            SHOW_EDITOR_DOCSTRING, py::arg("close_event") = py::none())
       .def(
           "process",
@@ -2293,8 +2290,7 @@ example: a Linux LADSPA plugin bundle will not load on Windows or macOS.)
            py::arg("buffer_size") = DEFAULT_BUFFER_SIZE,
            py::arg("reset") = true)
       .def_readwrite(
-          "_reload_type",
-          &ExternalPlugin<juce::LADSPAPluginFormat>::reloadType,
+          "_reload_type", &ExternalPlugin<juce::LADSPAPluginFormat>::reloadType,
           "The behavior that this plugin exhibits when .reset() is called. "
           "This is an internal attribute which gets set on plugin "
           "instantiation and should only be accessed for debugging and "
