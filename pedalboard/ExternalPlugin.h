@@ -180,6 +180,7 @@ inline std::vector<std::string> findInstalledVSTPluginPaths() {
   return pluginPaths;
 }
 
+#if JUCE_LINUX
 inline std::vector<std::string> findInstalledLADSPAPluginPaths() {
   juce::MessageManager::getInstance();
   juce::LADSPAPluginFormat format;
@@ -191,6 +192,7 @@ inline std::vector<std::string> findInstalledLADSPAPluginPaths() {
   }
   return pluginPaths;
 }
+#endif
 
 /**
  * Given a py::object representing a Python list object filled with Tuple[bytes,
