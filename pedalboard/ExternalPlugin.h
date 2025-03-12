@@ -180,6 +180,7 @@ inline std::vector<std::string> findInstalledVSTPluginPaths() {
   return pluginPaths;
 }
 
+#if JUCE_PLUGINHOST_LADSPA && JUCE_LINUX
 inline std::vector<std::string> findInstalledLADSPAPluginPaths() {
   juce::MessageManager::getInstance();
   juce::LADSPAPluginFormat format;
@@ -2093,7 +2094,7 @@ see :class:`pedalboard.VST3Plugin`.)
           "testing.");
 #endif
 
-#if JUCE_LINUX
+#if JUCE_PLUGINHOST_LADSPA && JUCE_LINUX
   py::class_<ExternalPlugin<juce::LADSPAPluginFormat>,
              AbstractExternalPlugin,
              std::shared_ptr<ExternalPlugin<juce::LADSPAPluginFormat>>>(
