@@ -588,16 +588,16 @@ jobs:
           && coverage json --fail-under=${{ env.MINIMUM_COVERAGE_PERCENTAGE }} \
           && jq -r 'def roundit: .*100.0 + 0.5|floor/100.0; .totals.percent_covered | round | "COVERAGE_PERCENTAGE=" + (. | tostring) + "%" ' coverage.json >> $GITHUB_ENV \
           && jq -r 'if .totals.percent_covered > ${{ env.MINIMUM_COVERAGE_PERCENTAGE }} then "COVERAGE_COLOR=green" else "COVERAGE_COLOR=red" end' coverage.json >> $GITHUB_ENV
-      - name: Create coverage badge
-        uses: schneegans/dynamic-badges-action@v1.1.0
-        if: matrix.os == 'ubuntu-20.04' && matrix.python-version == '3.8' && github.event_name == 'release' && github.event.action == 'published'
-        with:
-          auth: ${{ secrets.COVERAGE_GIST_SECRET }}
-          gistID: 8736467e9952991ef44a67915ee7c762
-          filename: coverage.json
-          label: Test Coverage
-          message: ${{ env.COVERAGE_PERCENTAGE }}
-          color: ${{ env.COVERAGE_COLOR }}
+      # - name: Create coverage badge
+      #   uses: schneegans/dynamic-badges-action@v1.1.0
+      #   if: matrix.os == 'ubuntu-20.04' && matrix.python-version == '3.8' && github.event_name == 'release' && github.event.action == 'published'
+      #   with:
+      #     auth: ${{ secrets.COVERAGE_GIST_SECRET }}
+      #     gistID: 8736467e9952991ef44a67915ee7c762
+      #     filename: coverage.json
+      #     label: Test Coverage
+      #     message: ${{ env.COVERAGE_PERCENTAGE }}
+      #     color: ${{ env.COVERAGE_COLOR }}
 
   run-tests-with-address-sanitizer:
     runs-on: ${{ matrix.os }}
