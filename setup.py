@@ -87,7 +87,7 @@ ALL_INCLUDES.extend(
     ]
 )
 
-if platform.system() == "Linux":
+if platform.system() == "Linux" and "musllinux" not in os.getenv("CIBW_BUILD", ""):
     ALL_CPPFLAGS.extend(
         [
             "-DJUCE_PLUGINHOST_LADSPA=1",  # Include for LADSPA plugin support, Linux only
