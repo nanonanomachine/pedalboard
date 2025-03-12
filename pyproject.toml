@@ -14,7 +14,7 @@ build-backend = "setuptools.build_meta"
 
 # See: https://cibuildwheel.readthedocs.io/en/stable/options/#examples
 [tool.cibuildwheel.linux]
-before-all = "yum install -y libsndfile libX11-devel libXrandr-devel libXinerama-devel libXrender-devel libXcomposite-devel libXinerama-devel libXcursor-devel freetype-devel alsa-lib-devel"
+before-all = "yum install -y libsndfile libX11-devel libXrandr-devel libXinerama-devel libXrender-devel libXcomposite-devel libXinerama-devel libXcursor-devel freetype-devel alsa-lib-devel ladspa-devel"
 
 [[tool.cibuildwheel.overrides]]
 # Use apk instead of yum when building on Alpine Linux

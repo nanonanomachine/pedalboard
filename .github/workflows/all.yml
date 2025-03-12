@@ -75,7 +75,7 @@ jobs:
           libx11-dev libxrandr-dev libxinerama-dev \
           libxrender-dev libxcomposite-dev libxcb-xinerama0-dev \
           libxcursor-dev libfreetype6 libfreetype6-dev \
-          libasound2-dev
+          libasound2-dev ladspa-sdk
       # We depend on ccache features that are only present in 4.8.0 and later, but installing from apt-get gives us v3.
       - name: Install ccache on Linux
         if: runner.os == 'Linux'
@@ -259,7 +259,7 @@ jobs:
           libx11-dev libxrandr-dev libxinerama-dev \
           libxrender-dev libxcomposite-dev libxcb-xinerama0-dev \
           libxcursor-dev libfreetype6 libfreetype6-dev \
-          libasound2-dev
+          libasound2-dev ladspa-sdk
       # We depend on ccache features that are only present in 4.8.0 and later, but installing from apt-get gives us v3.
       - name: Install ccache on Linux
         if: runner.os == 'Linux'
@@ -366,7 +366,7 @@ jobs:
           libx11-dev libxrandr-dev libxinerama-dev \
           libxrender-dev libxcomposite-dev libxcb-xinerama0-dev \
           libxcursor-dev libfreetype6 libfreetype6-dev \
-          libasound2-dev
+          libasound2-dev ladspa-sdk
       # We depend on ccache features that are only present in 4.8.0 and later, but installing from apt-get gives us v3.
       - name: Install ccache on Linux
         if: runner.os == 'Linux'
@@ -491,7 +491,7 @@ jobs:
           libx11-dev libxrandr-dev libxinerama-dev \
           libxrender-dev libxcomposite-dev libxcb-xinerama0-dev \
           libxcursor-dev libfreetype6 libfreetype6-dev \
-          libasound2-dev
+          libasound2-dev ladspa-sdk
       # We depend on ccache features that are only present in 4.8.0 and later, but installing from apt-get gives us v3.
       - name: Install ccache on Linux
         if: runner.os == 'Linux'
@@ -623,7 +623,7 @@ jobs:
           libx11-dev libxrandr-dev libxinerama-dev \
           libxrender-dev libxcomposite-dev libxcb-xinerama0-dev \
           libxcursor-dev libfreetype6 libfreetype6-dev \
-          libasound2-dev
+          libasound2-dev ladspa-sdk
       # We depend on ccache features that are only present in 4.8.0 and later, but installing from apt-get gives us v3.
       - name: Install ccache on Linux
         if: runner.os == 'Linux'

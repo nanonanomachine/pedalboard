@@ -70,7 +70,6 @@ ALL_CPPFLAGS.extend(
         "-DJucePlugin_Build_Unity=0",
         # "-DJUCE_PLUGINHOST_VST=1", # Include for VST2 support, not licensed by Steinberg
         # "-DJUCE_PLUGINHOST_VST3=1", # Disable the built-in VST3 support, as we include our own.
-        # "-DJUCE_PLUGINHOST_LADSPA=1", # Include for LADSPA plugin support, Linux only.
         "-DJUCE_DISABLE_JUCE_VERSION_PRINTING=1",
         "-DJUCE_WEB_BROWSER=0",
         "-DJUCE_USE_CURL=0",
@@ -87,6 +86,13 @@ ALL_INCLUDES.extend(
         "JUCE/modules/juce_audio_processors/format_types/VST3_SDK/",
     ]
 )
+
+if platform.system() == "Linux" and "musllinux" not in os.getenv("CIBW_BUILD", ""):
+    ALL_CPPFLAGS.extend(
+        [
+            "-DJUCE_PLUGINHOST_LADSPA=1",  # Include for LADSPA plugin support, Linux only
+        ]
+    )
 
 if "musllinux" in os.getenv("CIBW_BUILD", ""):
     # For Alpine/musllinux compatibility:
